@@ -253,3 +253,55 @@ func TestDumpStruct(t *testing.T) {
 		t.Error(b)
 	}
 }
+
+func TestNested(t *testing.T) {
+	type B struct {
+		A []int
+	}
+	a := make(map[string]interface{})
+	b := B{
+		[]int{1, 2, 3},
+	}
+	a["a"] = b
+	a["b"] = 1
+	a["c"] = []int{4, 5, 6}
+	s, err := Dump(&a)
+	if err != nil {
+		t.Error(err)
+	}
+	if s != `[a]
+A = 1, 2, 3
+b = 1
+c = 4, 5, 6
+` {
+		t.Error(s)
+	}
+
+	c := struct {
+		B B
+	}{
+		b,
+	}
+	s, err = Dump(c)
+	if err != nil {
+		t.Error(err)
+	}
+	if s != `[B]
+A = 1, 2, 3
+` {
+		t.Error(s)
+	}
+
+	d := struct {
+		A struct {
+			B struct {
+				C int
+			}
+		}
+	}{}
+	d.A.B.C = 1
+	s, err = Dump(d)
+	if err == nil {
+		t.Error(s)
+	}
+}
