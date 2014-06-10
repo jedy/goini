@@ -34,6 +34,22 @@ func LoadFile(path string) (*Node, error) {
 	return read(file)
 }
 
+func LoadTo(data string, i interface{}) error {
+	node, err := Load(data)
+	if err != nil {
+		return err
+	}
+	return node.Mapto(i)
+}
+
+func LoadFileTo(path string, i interface{}) error {
+	node, err := LoadFile(path)
+	if err != nil {
+		return err
+	}
+	return node.Mapto(i)
+}
+
 func Dump(i interface{}) (string, error) {
 	s := new(bytes.Buffer)
 	err := write(s, i)
@@ -63,21 +79,32 @@ func write(w io.Writer, i interface{}) error {
 	return nil
 }
 
+func parseTag(tag string) (string, []string) {
+	splitter := regexp.MustCompile(`\s*,\s*`)
+	commentSplitter := regexp.MustCompile(`\s*;\s*`)
+	parts := splitter.Split(tag, 2)
+	if len(parts) == 1 {
+		return parts[0], nil
+	}
+	comments := commentSplitter.Split(parts[1], -1)
+	return parts[0], comments
+}
+
 func encodeStruct(w io.Writer, v reflect.Value) error {
-	r := regexp.MustCompile(`\s*,\s*`)
 	t := v.Type()
 	for i := 0; i < t.NumField(); i++ {
 		s := t.Field(i)
-		parts := r.Split(s.Tag.Get("ini"), 2)
-		name := parts[0]
+		name, comments := parseTag(s.Tag.Get("ini"))
 		if name == "" {
 			name = s.Name
 		}
 		if name == "-" || strings.ToLower(s.Name[:1]) == s.Name[:1] {
 			continue
 		}
-		if len(parts) == 2 {
-			fmt.Println(";", parts[1])
+		if comments != nil {
+			for _, c := range comments {
+				fmt.Fprintln(w, ";", c)
+			}
 		}
 		f := v.Field(i)
 		switch s.Type.Kind() {

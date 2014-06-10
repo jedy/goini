@@ -158,8 +158,23 @@ func TestMap(t *testing.T) {
 	}
 }
 
-func TestLoad(t *testing.T) {
-
+func TestComment(t *testing.T) {
+	a := struct {
+		A int `ini:"a, comment"`
+		B int `ini:"b, comment1; comment2"`
+	}{}
+	s, err := Dump(a)
+	if err != nil {
+		t.Error(err)
+	}
+	if s != `; comment
+a = 0
+; comment1
+; comment2
+b = 0
+` {
+		t.Error(s)
+	}
 }
 
 func TestDumpMap(t *testing.T) {
