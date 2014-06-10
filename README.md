@@ -1,0 +1,4 @@
+goini
+=====
+
+ini config parser
