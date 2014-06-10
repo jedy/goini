@@ -68,8 +68,8 @@ func main() {
 output:
 
 ```
-; root item 1
 ----------- dump
+; root item 1
 r1 = 1
 R2 = test
 R5 = 1m0s
