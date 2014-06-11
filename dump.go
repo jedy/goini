@@ -78,36 +78,58 @@ func parseTag(tag string) (string, []string) {
 	return parts[0], comments
 }
 
-func writeSection(w io.Writer, name string, first bool) {
-	if !first {
+func writeSection(w io.Writer, name string, addLine bool) {
+	if addLine {
 		fmt.Fprintln(w, "")
 	}
 	fmt.Fprintf(w, "[%s]", name)
 	fmt.Fprintln(w, "")
 }
 
-func writeItem(w io.Writer, name string, v reflect.Value, deep int, first bool) (err error) {
+func writeComment(w io.Writer, comments []string) {
+	if comments != nil {
+		for _, c := range comments {
+			fmt.Fprintln(w, ";", c)
+		}
+	}
+}
+
+func writeItem(w io.Writer, name string, comments []string, v reflect.Value, dumpSimpleType bool, deep int, addLine bool) (dumped bool, err error) {
 	k := v.Type().Kind()
 	if isBaseKind(k, true) {
-		_, err = fmt.Fprintln(w, name, "=", v.Interface())
+		if dumpSimpleType {
+			writeComment(w, comments)
+			_, err = fmt.Fprintln(w, name, "=", v.Interface())
+			dumped = true
+		}
 	} else if k == reflect.Slice {
-		err = encodeSlice(w, name, v.Type().Elem().Kind(), v)
-	} else {
-		writeSection(w, name, first)
+		if dumpSimpleType {
+			writeComment(w, comments)
+			err = encodeSlice(w, name, v.Type().Elem().Kind(), v)
+			dumped = true
+		}
+	} else if !dumpSimpleType {
+		writeComment(w, comments)
+		writeSection(w, name, addLine)
 		err = writeValue(w, v, deep+1)
+		dumped = true
 	}
 	return
 }
 
 func encodeMap(w io.Writer, v reflect.Value, deep int) (err error) {
-	for idx, i := range v.MapKeys() {
-		vv := v.MapIndex(i)
-		if vv.Type().Kind() == reflect.Interface {
-			vv = vv.Elem()
-		}
-		err = writeItem(w, i.String(), vv, deep, idx == 0)
-		if err != nil {
-			return
+	addLine, dumped := false, false
+	for _, dumpType := range [2]bool{true, false} {
+		for _, i := range v.MapKeys() {
+			vv := v.MapIndex(i)
+			if vv.Type().Kind() == reflect.Interface {
+				vv = vv.Elem()
+			}
+			dumped, err = writeItem(w, i.String(), nil, vv, dumpType, deep, addLine)
+			if err != nil {
+				return
+			}
+			addLine = addLine || dumped
 		}
 	}
 	return
@@ -131,24 +153,23 @@ func encodeSlice(w io.Writer, name string, k reflect.Kind, v reflect.Value) erro
 
 func encodeStruct(w io.Writer, v reflect.Value, deep int) error {
 	t := v.Type()
+	addLine, dumped := false, false
 	var err error
-	for i := 0; i < t.NumField(); i++ {
-		s := t.Field(i)
-		name, comments := parseTag(s.Tag.Get("ini"))
-		if name == "" {
-			name = s.Name
-		}
-		if name == "-" || strings.ToLower(s.Name[:1]) == s.Name[:1] {
-			continue
-		}
-		if comments != nil {
-			for _, c := range comments {
-				fmt.Fprintln(w, ";", c)
+	for _, dumpType := range [2]bool{true, false} {
+		for i := 0; i < t.NumField(); i++ {
+			s := t.Field(i)
+			name, comments := parseTag(s.Tag.Get("ini"))
+			if name == "" {
+				name = s.Name
 			}
-		}
-		err = writeItem(w, name, v.Field(i), deep, i == 0)
-		if err != nil {
-			return err
+			if name == "-" || strings.ToLower(s.Name[:1]) == s.Name[:1] {
+				continue
+			}
+			dumped, err = writeItem(w, name, comments, v.Field(i), dumpType, deep, addLine)
+			if err != nil {
+				return err
+			}
+			addLine = addLine || dumped
 		}
 	}
 	return nil

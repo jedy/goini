@@ -269,10 +269,11 @@ func TestNested(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if s != `[a]
-A = 1, 2, 3
-b = 1
+	if s != `b = 1
 c = 4, 5, 6
+
+[a]
+A = 1, 2, 3
 ` {
 		t.Error(s)
 	}
@@ -304,4 +305,29 @@ A = 1, 2, 3
 	if err == nil {
 		t.Error(s)
 	}
+}
+
+func TestDumpOrder(t *testing.T) {
+	type A struct {
+		A int
+	}
+	a := struct {
+		X A
+		Y int
+	}{
+		X: A{10},
+		Y: 20,
+	}
+	s, err := Dump(a)
+	if err != nil {
+		t.Error(err)
+	}
+	if s != `Y = 20
+
+[X]
+A = 10
+` {
+		t.Error(s)
+	}
+
 }
