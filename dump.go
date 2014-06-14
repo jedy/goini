@@ -6,7 +6,6 @@ import (
 	"io"
 	"reflect"
 	"regexp"
-	"strings"
 )
 
 func Dump(i interface{}) (string, error) {
@@ -162,7 +161,7 @@ func encodeStruct(w io.Writer, v reflect.Value, deep int) error {
 			if name == "" {
 				name = s.Name
 			}
-			if name == "-" || strings.ToLower(s.Name[:1]) == s.Name[:1] {
+			if name == "-" || s.PkgPath != "" {
 				continue
 			}
 			dumped, err = writeItem(w, name, comments, v.Field(i), dumpType, deep, addLine)
