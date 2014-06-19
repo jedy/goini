@@ -341,3 +341,42 @@ A = 10
 	}
 
 }
+
+func TestOverride(t *testing.T) {
+	type A struct {
+		X int
+		Y int
+	}
+	a := A{
+		X: 10,
+		Y: 20,
+	}
+	c := `X = 100`
+	err := LoadTo(c, &a)
+	if err != nil {
+		t.Error(err)
+	}
+	if a.X != 100 || a.Y != 20 {
+		t.Error(a)
+	}
+
+	type B struct {
+		A A
+	}
+	b := B{
+		A: A{
+			X: 10,
+			Y: 20,
+		},
+	}
+	c = `[A]
+X = 100
+`
+	err = LoadTo(c, &b)
+	if err != nil {
+		t.Error(err)
+	}
+	if b.A.X != 100 || b.A.Y != 20 {
+		t.Error(b)
+	}
+}

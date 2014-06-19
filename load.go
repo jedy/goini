@@ -179,11 +179,10 @@ func (n Node) decodeStruct(v reflect.Value) error {
 		if node.IsEmpty() {
 			continue
 		}
-		val, err := node.getValueOfNode(s.Type)
+		err := node.Mapto(f.Addr().Interface())
 		if err != nil {
 			return err
 		}
-		f.Set(val)
 	}
 	return nil
 }
