@@ -269,13 +269,23 @@ func TestNested(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if s != `b = 1
-c = 4, 5, 6
-
-[a]
-A = 1, 2, 3
-` {
-		t.Error(s)
+	n, err := Load(s)
+	if err != nil {
+		t.Error(err)
+	}
+	if n.Get("b").MustInt(0) != 1 {
+		t.Error(n.Get("b").MustInt(0))
+	}
+	list, err := n.Get("c").Ints()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(list) != 3 || list[0] != 4 || list[1] != 5 || list[2] != 6 {
+		t.Error(list)
+	}
+	list, err = n.Get("a", "A").Ints()
+	if len(list) != 3 || list[0] != 1 || list[1] != 2 || list[2] != 3 {
+		t.Error(list)
 	}
 
 	c := struct {

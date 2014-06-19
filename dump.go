@@ -77,10 +77,7 @@ func parseTag(tag string) (string, []string) {
 	return parts[0], comments
 }
 
-func writeSection(w io.Writer, name string, addLine bool) {
-	if addLine {
-		fmt.Fprintln(w, "")
-	}
+func writeSection(w io.Writer, name string) {
 	fmt.Fprintf(w, "[%s]", name)
 	fmt.Fprintln(w, "")
 }
@@ -108,8 +105,11 @@ func writeItem(w io.Writer, name string, comments []string, v reflect.Value, dum
 			dumped = true
 		}
 	} else if !dumpSimpleType {
+		if addLine {
+			fmt.Fprintln(w, "")
+		}
 		writeComment(w, comments)
-		writeSection(w, name, addLine)
+		writeSection(w, name)
 		err = writeValue(w, v, deep+1)
 		dumped = true
 	}
