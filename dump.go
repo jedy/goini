@@ -161,7 +161,7 @@ func encodeStruct(w io.Writer, v reflect.Value, deep int) error {
 			if name == "" {
 				name = s.Name
 			}
-			if name == "-" || s.PkgPath != "" {
+			if name == "-" || (s.PkgPath != "" && !s.Anonymous) {
 				continue
 			}
 			dumped, err = writeItem(w, name, comments, v.Field(i), dumpType, deep, addLine)
